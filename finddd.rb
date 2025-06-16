@@ -1,29 +1,15 @@
 require 'json'
 require 'open3'
+require 'tempfile'
 
 def run_osa_script(script)
-  require 'tempfile'
+  temp_file = Tempfile.new(['script', '.scpt'])
+  temp_file.write(script)
+  temp_file.close
 
-  def run_osa_script(script)
-    temp_file = Tempfile.new(['script', '.scpt'])
-    temp_file.write(script)
-    temp_file.close
+  stdout, stderr, status = Open3.capture3("osascript #{temp_file.path}")
 
-    stdout, stderr, status = Open3.capture3("osascript #{temp_file.path}")
-
-    temp_file.unlink
-
-    unless status.success?
-      puts "Error executing AppleScript: #{stderr}"
-      exit 1
-    end
-
-    return stderr
-  end
-
-  stdout, stderr, status = Open3.capture3(<<~OSA)
-    osascript -e '#{script}'
-  OSA
+  temp_file.unlink
 
   unless status.success?
     puts "Error executing AppleScript: #{stderr}"

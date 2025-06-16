@@ -86,6 +86,7 @@ home_finder_exists = windows.any? do |window|
   window_path = window["window_path"]
   window_path == "#{ENV["HOME"]}/"
 end
+windows = windows.sort_by { |window| window["window_path"] }
 
 idx = 0
 unless home_finder_exists
@@ -94,11 +95,17 @@ unless home_finder_exists
   idx += 1
 end
 
-# todo: mountされたディレクトリがあればそれを優先して表示
+mounted_drives = Dir.glob("/Volumes/*").select { |path| File.directory?(path) && !path.end_with?("Macintosh HD") }
+mounted_drives.reject! { |path| path.include?("TimeMachine.localsnapshots") || path.include?("Installer") }
+mounted_drives = mounted_drives.slice(0, 2)
+puts "mounted_drives"
+puts mounted_drives
 
-windows = windows.sort_by { |window| window["window_path"] }
+mounted_drives.each_with_index do |mounted_drive, index|
+  windows[1 + index] = { "window_id" => :mounted_drive, "window_path" => mounted_drive }
+end
 
-# 4つまでが限界
+# 4つまでが限界とする
 4.times.each_with_index do |index|
   window = windows[index] || {}
 
@@ -106,24 +113,36 @@ windows = windows.sort_by { |window| window["window_path"] }
 
   case idx
   when 0
-    result_left << [window_id, 0, 0, w / 2, h / 2]
+    result_left << [window_id, 0, 0, w / 2, h / 2, window["window_path"]]
   when 1
-    result_left << [window_id, 0, h / 2, w / 2, h]
+    result_left << [window_id, 0, h / 2, w / 2, h, window["window_path"]]
   when 2
-    result_right << [window_id, w / 2, 0, w, h / 2]
+    result_right << [window_id, w / 2, 0, w, h / 2, window["window_path"]]
   when 3
-    result_right << [window_id, w / 2, h / 2, w, h]
+    result_right << [window_id, w / 2, h / 2, w, h, window["window_path"]]
   end
 
   idx += 1
 end
 
 def process_bounds(bounds)
-  pad = 20
+  pad = 40
   [bounds[0] + pad, bounds[1] + pad, bounds[2] - pad, bounds[3] - pad].join(", ")
 end
 
-def resize_window(window_id, bounds = [100, 100, 900, 700])
+def resize_window(window_id, bounds = [100, 100, 900, 700], path = nil)
+  if window_id == :mounted_drive
+    system(<<~OSA)
+      osascript -e 'tell application "Finder"
+        activate
+        set targetWindow to make new Finder window
+        set target of targetWindow to POSIX file "#{path}"
+        set bounds of targetWindow to {#{process_bounds(bounds)}}
+      end tell'
+    OSA
+    return
+  end
+
   if window_id == :finder
     system(<<~OSA)
       osascript -e 'tell application "Finder"
@@ -133,7 +152,6 @@ def resize_window(window_id, bounds = [100, 100, 900, 700])
         set bounds of targetWindow to {#{process_bounds(bounds)}}
       end tell'
     OSA
-
     return
   end
 
@@ -151,7 +169,7 @@ puts "right"
 puts result_right
 
 [*result_left, *result_right].each do |window|
-  resize_window(window[0], window[1..4])
+  resize_window(window[0], window[1..4], window[5])
 end
 
 run_osa_script(<<~OSA)

@@ -96,20 +96,23 @@ end
 
 # todo: mountされたディレクトリがあればそれを優先して表示
 
-windows.sort_by { |window| window["window_path"] }.each_with_index do |window, index|
-  break if index > 4
+windows = windows.sort_by { |window| window["window_path"] }
 
-  window_path = window["window_path"]
+# 4つまでが限界
+4.times.each_with_index do |index|
+  window = windows[index] || {}
+
+  window_id = window["window_id"] || :finder
 
   case idx
   when 0
-    result_left << [window["window_id"], 0, 0, w / 2, h / 2]
+    result_left << [window_id, 0, 0, w / 2, h / 2]
   when 1
-    result_left << [window["window_id"], 0, h / 2, w / 2, h]
+    result_left << [window_id, 0, h / 2, w / 2, h]
   when 2
-    result_right << [window["window_id"], w / 2, 0, w, h / 2]
+    result_right << [window_id, w / 2, 0, w, h / 2]
   when 3
-    result_right << [window["window_id"], w / 2, h / 2, w, h]
+    result_right << [window_id, w / 2, h / 2, w, h]
   end
 
   idx += 1
@@ -120,7 +123,7 @@ def process_bounds(bounds)
   [bounds[0] + pad, bounds[1] + pad, bounds[2] - pad, bounds[3] - pad].join(", ")
 end
 
-def resize_window(window_id, bounds = [100, 100, 900, 700], index = 1)
+def resize_window(window_id, bounds = [100, 100, 900, 700])
   if window_id == :finder
     system(<<~OSA)
       osascript -e 'tell application "Finder"
@@ -147,8 +150,8 @@ puts result_left
 puts "right"
 puts result_right
 
-[*result_left, *result_right].each_with_index do |window, index|
-  resize_window(window[0], window[1..4], index + 1)
+[*result_left, *result_right].each do |window|
+  resize_window(window[0], window[1..4])
 end
 
 run_osa_script(<<~OSA)

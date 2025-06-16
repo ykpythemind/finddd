@@ -79,7 +79,7 @@ end
 puts "windows"
 puts windows
 
-result_right = [] # [ window_id, x, y, w, h
+result_right = [] # [ window_id, x, y, w, h, path ]
 result_left = []
 
 home_finder_exists = windows.any? do |window|

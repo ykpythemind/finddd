@@ -76,7 +76,7 @@ windows = windows.sort_by { |window| window["window_path"] }
 
 unless home_finder_exists
   puts "Home Finder is not running"
-  windows[0] = { "window_id" => :finder }
+  windows.unshift({ "window_id" => :finder })
 end
 
 mounted_drives = Dir.glob("/Volumes/*").select { |path| File.directory?(path) && !path.end_with?("Macintosh HD") }

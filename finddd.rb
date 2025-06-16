@@ -74,15 +74,13 @@ home_finder_exists = windows.any? do |window|
 end
 windows = windows.sort_by { |window| window["window_path"] }
 
-idx = 0
 unless home_finder_exists
   puts "Home Finder is not running"
-  result_left << [:finder, 0, 0, w / 2, h / 2]
-  idx += 1
+  windows[0] = { "window_id" => :finder }
 end
 
 mounted_drives = Dir.glob("/Volumes/*").select { |path| File.directory?(path) && !path.end_with?("Macintosh HD") }
-mounted_drives.reject! { |path| path.include?("TimeMachine.localsnapshots") || path.include?("Installer") }
+mounted_drives.reject! { |path| path.include?("TimeMachine.localsnapshots") || path.include?("Installer") || path.include?("バックアップ") || path.include?("mac studio") }
 mounted_drives = mounted_drives.slice(0, 2)
 puts "mounted_drives"
 puts mounted_drives
@@ -97,7 +95,7 @@ end
 
   window_id = window["window_id"] || :finder
 
-  case idx
+  case index
   when 0
     result_left << [window_id, 0, 0, w / 2, h / 2, window["window_path"]]
   when 1
@@ -107,8 +105,6 @@ end
   when 3
     result_right << [window_id, w / 2, h / 2, w, h, window["window_path"]]
   end
-
-  idx += 1
 end
 
 def process_bounds(bounds)

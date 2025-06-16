@@ -80,7 +80,7 @@ unless home_finder_exists
 end
 
 mounted_drives = Dir.glob("/Volumes/*").select { |path| File.directory?(path) && !path.end_with?("Macintosh HD") }
-mounted_drives.reject! { |path| path.include?("TimeMachine.localsnapshots") || path.include?("Installer") || path.include?("バックアップ") || path.include?("mac studio") }
+mounted_drives.reject! { |path| path.include?("TimeMachine.localsnapshots") || path.include?("Installer") || path.include?("バックアップ") || path.include?("ykpythemind-mbp") || path.include?("mac studio") }
 mounted_drives = mounted_drives.slice(0, 2)
 puts "mounted_drives"
 puts mounted_drives
